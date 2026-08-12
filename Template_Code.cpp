@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <cstdint>
 using namespace std;
 
 class BigInt {
@@ -9,102 +8,35 @@ class BigInt {
 
     // Remove unnecessary leading zeros from the number string
     void removeLeadingZeros() {
-        // Find the first non-zero digit
-        size_t firstNonZero = 0;
-        while (firstNonZero < number.length() && number[firstNonZero] == '0') {
-            firstNonZero++;
-        }
-
-        // If the whole string was zeros (or empty), keep a single "0"
-        if (firstNonZero == number.length()) {
-            number = "0";
-            isNegative = false;   // negative zero is not allowed
-            return;
-        }
-
-        // Erase the leading zeros
-        number.erase(0, firstNonZero);
+        // TODO: Implement this function
     }
-
 
     // Compare absolute values of two BigInts (ignore signs)
     // Returns: 1 if |this| > |other|, 0 if equal, -1 if |this| < |other|
     int compareMagnitude(const BigInt& other) const {
-        // Different lengths → longer one is bigger
-        if (number.length() > other.number.length()) {
-            return 1;
-        }
-        if (number.length() < other.number.length()) {
-            return -1;
-        }
-
-        // Same length → lexicographical compare
-        if (number > other.number) {
-            return 1;
-        }
-        if (number < other.number) {
-            return -1;
-        }
-
-        // Completely equal
+        // TODO: Implement this function
         return 0;
     }
+
 public:
     // Default constructor - initialize to zero
     BigInt() {
-        number = "0";
-        isNegative = false;
+        // TODO: Implement this constructor
     }
+
     // Constructor from 64-bit integer
     BigInt(int64_t value) {
-        if (value < 0)
-    {
-        isNegative = true;
-
-        string temp = to_string(value);
-
-        number = temp.substr(1);
+        // TODO: Implement this constructor
     }
-    else
-    {
-        isNegative = false;
 
-        number = to_string(value);
-    }
-}
     // Constructor from string representation
     BigInt(const string& str) {
-        // Empty string safety (treat as zero)
-        if (str.empty()) {
-            number = "0";
-            isNegative = false;
-            return;
-        }
-
-        // Check for leading minus sign
-        if (str[0] == '-') {
-            isNegative = true;
-            // Take everything after the '-'
-            if (str.length() == 1) {
-                // Just "-" → treat as zero
-                number = "0";
-                isNegative = false;
-            } else {
-                number = str.substr(1);
-            }
-        } else {
-            isNegative = false;
-            number = str;
-        }
-
-        // Normalize (remove leading zeros and fix -0)
-        removeLeadingZeros();
+        // TODO: Implement this constructor
     }
 
     // Copy constructor
     BigInt(const BigInt& other) {
-        number = other.number;
-        isNegative = other.isNegative;
+        // TODO: Implement this constructor
     }
 
     // Destructor
@@ -114,39 +46,148 @@ public:
 
     // Assignment operator
     BigInt& operator=(const BigInt& other) {
-        // Self-assignment check
-        if (this == &other) {
+        // TODO: Implement this operator
+        return *this;
+    }
+
+    // Unary negation operator (-x) philip
+    BigInt operator-() const {
+        BigInt result = *this;
+        if (result.number != "0") {
+            result.isNegative = !result.isNegative;
+        } else {
+            result.isNegative = false;
+        }
+        return result;
+    }
+
+    // Unary plus operator (+x) philip
+    BigInt operator+() const {
+        BigInt result = *this;
+        return result;
+    }
+
+    // Addition assignment operator (x += y) philip
+    BigInt& operator+=(const BigInt& other) {
+        if (this->isNegative != other.isNegative) {
+            BigInt temp = other;
+            temp.isNegative = this->isNegative;
+            *this -= temp;
             return *this;
         }
 
-        number = other.number;
-        isNegative = other.isNegative;
+        string result = "";
+        int i = this->number.length() - 1;
+        int j = other.number.length() - 1;
+        int carry = 0;
+
+        while (i >= 0 || j >= 0 || carry > 0) {
+            // Get digit 1 using normal if/else
+            int digit1;
+            if (i >= 0) {
+                digit1 = this->number[i] - '0';
+            } else {
+                digit1 = 0;
+            }
+
+            // Get digit 2 using normal if/else
+            int digit2;
+            if (j >= 0) {
+                digit2 = other.number[j] - '0';
+            } else {
+                digit2 = 0;
+            }
+            
+            int sum = digit1 + digit2 + carry;
+            carry = sum / 10;
+            
+            result.push_back((sum % 10) + '0');
+            i--; 
+            j--;
+        }
+
+        int start = 0, end = result.length() - 1;
+        while (start < end) {
+            char temp_char = result[start];
+            result[start] = result[end];
+            result[end] = temp_char;
+            start++; 
+            end--;
+        }
+        
+        this->number = result;
+        removeLeadingZeros();
         return *this;
     }
 
-    // Unary negation operator (-x)
-    BigInt operator-() const {
-        BigInt result;
-        // TODO: Implement negation logic
-        return result;
-    }
-
-    // Unary plus operator (+x)
-    BigInt operator+() const {
-        BigInt result;
-        // TODO: Implement this operator
-        return result;
-    }
-
-    // Addition assignment operator (x += y)
-    BigInt& operator+=(const BigInt& other) {
-        // TODO: Implement this operator
-        return *this;
-    }
-
-    // Subtraction assignment operator (x -= y)
+    // Subtraction assignment operator (x -= y) philip
     BigInt& operator-=(const BigInt& other) {
-        // TODO: Implement this operator
+        if (this->isNegative != other.isNegative) {
+            BigInt temp = other;
+            temp.isNegative = this->isNegative;
+            *this += temp;
+            return *this;
+        }
+
+        int cmp = compareMagnitude(other);
+        
+        // Setup maxStr and minStr using standard if/else
+        string maxStr;
+        string minStr;
+        if (cmp >= 0) {
+            maxStr = this->number;
+            minStr = other.number;
+        } else {
+            maxStr = other.number;
+            minStr = this->number;
+        }
+        
+        string result = "";
+        int i = maxStr.length() - 1;
+        int j = minStr.length() - 1;
+        int borrow = 0;
+
+        while (i >= 0) {
+            // maxStr is guaranteed to have digits as long as i >= 0
+            int digit1 = maxStr[i] - '0';
+            
+            // Get digit 2 using normal if/else
+            int digit2;
+            if (j >= 0) {
+                digit2 = minStr[j] - '0';
+            } else {
+                digit2 = 0;
+            }
+            
+            int diff = digit1 - digit2 - borrow;
+            if (diff < 0) {
+                diff += 10;
+                borrow = 1;
+            } else {
+                borrow = 0;
+            }
+            
+            result.push_back(diff + '0');
+            i--; 
+            j--;
+        }
+
+        int start = 0, end = result.length() - 1;
+        while (start < end) {
+            char temp_char = result[start];
+            result[start] = result[end];
+            result[end] = temp_char;
+            start++; 
+            end--;
+        }
+        
+        this->number = result;
+        
+        if (cmp < 0) {
+            this->isNegative = !this->isNegative;
+        }
+        
+        removeLeadingZeros();
         return *this;
     }
 
@@ -217,18 +258,16 @@ public:
     friend bool operator<(const BigInt& lhs, const BigInt& rhs);
 };
 
-// Binary addition operator (x + y)
+// Binary addition operator (x + y) philip
 BigInt operator+(BigInt lhs, const BigInt& rhs) {
-    BigInt result;
-    // TODO: Implement this operator
-    return result;
+    lhs += rhs;
+    return lhs;
 }
 
-// Binary subtraction operator (x - y)
+// Binary subtraction operator (x - y) philip
 BigInt operator-(BigInt lhs, const BigInt& rhs) {
-    BigInt result;
-    // TODO: Implement this operator
-    return result;
+    lhs -= rhs;
+    return lhs;
 }
 
 // Binary multiplication operator (x * y)
