@@ -264,11 +264,57 @@ public:
         removeLeadingZeros();
         return *this;
     }
-
-    // Multiplication assignment operator (x *= y)
+   // Multiplication assignment operator (x *= y) Sara
     BigInt& operator*=(const BigInt& other) {
-        // TODO: Implement this operator
+        //If either operand is zero, the result is zero:
+        if (number == "0" || other.number == "0") {
+        number = "0";
+        isNegative = false;
         return *this;
+    }
+    //XOR rule:
+    bool resultNegative = (isNegative != other.isNegative);
+
+    int len1 = number.length();
+    int len2 = other.number.length();
+
+    //Implement the standard long multiplication algorithm:
+    int* result = new int[len1 + len2];
+
+    for (int i = 0; i < len1 + len2; i++) {
+        result[i] = 0;
+    }
+     for (int i = len1 - 1; i >= 0; i--) {
+            for (int j = len2 - 1; j >= 0; j--) {
+
+            int digit1 = number[i] - '0';
+            int digit2 = other.number[j] - '0';
+            result[i + j + 1] += digit1 * digit2;
+        }
+
+    }
+    for (int i = len1 + len2 - 1; i > 0; i--) {
+        result[i - 1] += result[i] / 10;
+        result[i] %= 10;
+    }
+
+    string newNumber = "";
+
+    int start = 0;
+
+    while (start < len1 + len2 - 1 && result[start] == 0) {
+        start++;
+    }
+
+    for (int i = start; i < len1 + len2; i++) {
+        newNumber += char(result[i] + '0');
+    }
+
+    number = newNumber;
+    isNegative = resultNegative;
+
+    removeLeadingZeros();
+   return *this;
     }
 
     // Division assignment operator (x /= y)
@@ -346,9 +392,8 @@ BigInt operator-(BigInt lhs, const BigInt& rhs) {
 
 // Binary multiplication operator (x * y)
 BigInt operator*(BigInt lhs, const BigInt& rhs) {
-    BigInt result;
-    // TODO: Implement this operator
-    return result;
+     lhs *= rhs;
+    return lhs;
 }
 
 // Binary division operator (x / y)
@@ -365,41 +410,50 @@ BigInt operator%(BigInt lhs, const BigInt& rhs) {
     return result;
 }
 
-// Equality comparison operator (x == y)
+// Equality comparison operator (x == y) Sara
 bool operator==(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+ if (lhs.isNegative != rhs.isNegative) {
+        return false;
+    }
+
+    return lhs.number == rhs.number;
 }
 
 // Inequality comparison operator (x != y)
 bool operator!=(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+ return !(lhs == rhs);
 }
 
 // Less-than comparison operator (x < y)
 bool operator<(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+  if (lhs.isNegative && !rhs.isNegative) {
+        return true;
+    }
+    if (!lhs.isNegative && rhs.isNegative) {
+        return false;
+    }
+    if (!lhs.isNegative && !rhs.isNegative) {
+        return lhs.compareMagnitude(rhs) == -1;
+    }
+    return lhs.compareMagnitude(rhs) == 1;
 }
+
 
 // Less-than-or-equal comparison operator (x <= y)
 bool operator<=(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+  return (lhs < rhs) || (lhs == rhs);
 }
 
 // Greater-than comparison operator (x > y)
 bool operator>(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+ return !(lhs <= rhs);
 }
 
 // Greater-than-or-equal comparison operator (x >= y)
 bool operator>=(const BigInt& lhs, const BigInt& rhs) {
-    // TODO: Implement this operator
-    return false;
+    return !(lhs < rhs);
 }
+
 
 int main() {
     cout << "=== BigInt Class Test Program ===" << endl << endl;
