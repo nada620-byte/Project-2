@@ -1,7 +1,16 @@
 #include <iostream>
 #include <string>
 #include <cstdint>
+#include <stdexcept>
+#include <vector>
 using namespace std;
+
+class BigInt;
+BigInt operator+(BigInt lhs, const BigInt& rhs);
+BigInt operator-(BigInt lhs, const BigInt& rhs);
+BigInt operator*(BigInt lhs, const BigInt& rhs);
+BigInt operator/(BigInt lhs, const BigInt& rhs);
+BigInt operator%(BigInt lhs, const BigInt& rhs);
 
 class BigInt {
     string number;    // Stores the number as a string
@@ -49,6 +58,21 @@ class BigInt {
         // Completely equal
         return 0;
     }
+
+
+    static string divideStringByTwo(const string& num) {
+        string result;
+        int carry = 0;
+        for (char c : num) {
+            int digit = carry * 10 + (c - '0');
+            result.push_back(char((digit / 2) + '0'));
+            carry = digit % 2;
+        }
+        size_t nonZero = result.find_first_not_of('0');
+        if (nonZero == string::npos) return "0";
+        return result.substr(nonZero);
+    }
+
 public:
     // Default constructor - initialize to zero
     BigInt() {
@@ -109,7 +133,7 @@ public:
 
     // Destructor
     ~BigInt() {
-        // TODO: Implement if needed
+        // No dynamic memory owned by this class - nothing to release
     }
 
     // Assignment operator
@@ -264,6 +288,7 @@ public:
         removeLeadingZeros();
         return *this;
     }
+
    // Multiplication assignment operator (x *= y) Sara
     BigInt& operator*=(const BigInt& other) {
         //If either operand is zero, the result is zero:
@@ -278,12 +303,9 @@ public:
     int len1 = number.length();
     int len2 = other.number.length();
 
-    //Implement the standard long multiplication algorithm:
-    int* result = new int[len1 + len2];
 
-    for (int i = 0; i < len1 + len2; i++) {
-        result[i] = 0;
-    }
+    vector<int> result(len1 + len2, 0);
+
      for (int i = len1 - 1; i >= 0; i--) {
             for (int j = len2 - 1; j >= 0; j--) {
 
@@ -318,16 +340,105 @@ public:
     }
 
     // Division assignment operator (x /= y)
-    BigInt& operator/=(const BigInt& other) {
-        // TODO: Implement this operator
+BigInt& operator/=(const BigInt& other) {
+    // Throw exception if divisor is zero
+    if (other.number == "0") {
+        throw std::runtime_error("Division by zero");
+    }
+
+    // If dividend is zero, result is zero
+    if (number == "0") {
         return *this;
     }
 
-    // Modulus assignment operator (x %= y)
-    BigInt& operator%=(const BigInt& other) {
-        // TODO: Implement this operator
+    // Store the sign of the result (XOR rule)
+    bool resultNegative = (isNegative != other.isNegative);
+
+    // Work with absolute values for division
+    BigInt dividend = *this;
+    dividend.isNegative = false;
+    BigInt divisor = other;
+    divisor.isNegative = false;
+
+    // If dividend < divisor, result is zero
+    if (dividend.compareMagnitude(divisor) == -1) {
+        number = "0";
+        isNegative = false;
         return *this;
     }
+
+    // Binary search for quotient
+    BigInt low(0);
+    BigInt high = dividend; // Since dividend is positive now
+    BigInt result(0);
+
+    // Binary search: find largest q such that q * divisor <= dividend
+    while (low.compareMagnitude(high) == -1 || low.compareMagnitude(high) == 0) {
+        // Calculate mid = (low + high) / 2
+        BigInt mid = low + high;
+
+        mid.number = divideStringByTwo(mid.number);
+
+        // Calculate mid * divisor
+        BigInt product = mid * divisor;
+
+        // If product <= dividend, search upper half
+        if (product.compareMagnitude(dividend) == 0 || product.compareMagnitude(dividend) == -1) {
+            result = mid;
+            low = mid + BigInt(1);
+        }
+        // Else search lower half
+        else {
+            high = mid - BigInt(1);
+        }
+
+        // Safety check to avoid infinite loops
+        if (low == high && low == mid) {
+            break;
+        }
+    }
+
+    // Apply the sign to the result
+    number = result.number;
+    isNegative = resultNegative;
+
+    // Ensure zero is positive
+    removeLeadingZeros();
+    return *this;
+}
+
+// Modulus assignment operator (x %= y)
+BigInt& operator%=(const BigInt& other) {
+    // Throw exception if divisor is zero
+    if (other.number == "0") {
+        throw std::runtime_error("Division by zero");
+    }
+
+    // If dividend is zero, result is zero
+    if (number == "0") {
+        return *this;
+    }
+
+    // Store the sign of the dividend (this) for the result
+    bool originalSign = isNegative;
+
+    // Calculate quotient = this / other
+    BigInt quotient = *this / other;
+
+    // Calculate remainder = this - (quotient * other)
+    BigInt remainder = *this - (quotient * other);
+
+    // The sign of the remainder matches the dividend
+    remainder.isNegative = originalSign;
+
+    // Copy the result
+    number = remainder.number;
+    isNegative = remainder.isNegative;
+
+    // Ensure zero is positive
+    removeLeadingZeros();
+    return *this;
+}
 
    // Pre-increment operator (++x)
     BigInt& operator++() {
@@ -463,12 +574,8 @@ bool operator>=(const BigInt& lhs, const BigInt& rhs) {
 
 int main() {
     cout << "=== BigInt Class Test Program ===" << endl << endl;
-    cout << "NOTE: All functions are currently empty." << endl;
-    cout << "Your task is to implement ALL the functions above." << endl;
-    cout << "The tests below will work once you implement them correctly." << endl << endl;
 
-    /*
-    // Test 1: Constructors and basic output
+    //Test 1: Constructors and basic output
     cout << "1. Constructors and output:" << endl;
     BigInt a(12345);              // Should create BigInt from integer
     BigInt b("-67890");           // Should create BigInt from string
@@ -523,7 +630,7 @@ int main() {
     cout << "Negative multiplication: " << BigInt(-5) * BigInt(3) << endl;  // Should be "-15"
     cout << "Negative division: " << BigInt(-10) / BigInt(3) << endl;       // Should be "-3"
     cout << "Negative modulus: " << BigInt(-10) % BigInt(3) << endl;        // Should be "-1"
-    */
+
 
     return 0;
 }
